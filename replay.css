@@ -1,0 +1,185 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Instrument+Serif:ital@0;1&display=swap');
+:root{--ink:#17212b;--muted:#6d7780;--navy:#10161f;--line:#dce2e5;--paper:#f7f8f6;--white:#fff;--blue:#306fe1;--purple:#7658bf;--purple-bg:#f0ebff;--green:#2c8b71;--red:#bf554c;--shadow:0 10px 30px rgba(20,30,41,.07)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:14px/1.45 "DM Sans",system-ui,sans-serif}
+.topbar{height:72px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.82);display:flex;align-items:center;padding:0 max(24px,calc((100vw - 1280px)/2));gap:42px}
+.brand{color:var(--ink);text-decoration:none;font-weight:700;font-size:16px;white-space:nowrap}
+.brand span{color:#8aa8f6;font-size:20px;margin-right:6px}
+.session-title{display:grid;gap:1px;min-width:240px}
+.eyebrow{font:500 10px "DM Mono",monospace;letter-spacing:.09em;color:#77828c;margin:0}
+.session-title input{font:600 14px "DM Sans";padding:0;border:0;background:transparent;outline:0;color:var(--ink)}
+.top-actions{margin-left:auto;display:flex;align-items:center;gap:14px}
+.local-status{font-size:11px;color:var(--green)}
+button{font:inherit}
+.primary-button,.ghost-button,.danger-button{border-radius:7px;padding:10px 13px;font:600 12px "DM Sans";cursor:pointer}
+.primary-button{background:var(--blue);color:#fff;border:1px solid var(--blue);box-shadow:0 2px 5px rgba(43,95,189,.15)}
+.primary-button:hover{background:#245fca}
+.ghost-button{background:#fff;color:#51606b;border:1px solid #d5dde1}
+.ghost-button:hover{background:#f4f6f7}
+.danger-button{background:#fff4f3;color:#af433c;border:1px solid #f0c9c5}
+.hidden{display:none!important}
+main{max-width:1210px;margin:0 auto;padding:44px 34px 70px}
+.hero{display:flex;justify-content:space-between;gap:40px;align-items:center}
+.hero h1{font:400 39px/1.02 "Instrument Serif",Georgia,serif;letter-spacing:-.5px;margin:8px 0 10px;max-width:650px}
+.hero>div>p:last-child{color:var(--muted);max-width:660px;margin:0;line-height:1.55}
+.privacy-note{display:flex;gap:10px;width:250px;margin:0;padding:13px;border-radius:8px;background:#f0f5ff;border:1px solid #dce8ff;color:#5f6c77;font-size:11px;line-height:1.5}
+.privacy-note span{font-size:19px;color:#5a82c9}
+.privacy-note p{margin:0}
+.privacy-note strong{color:#344756}
+.stepper{display:flex;align-items:center;gap:10px;margin:31px 0 22px}
+.stepper>i{height:1px;background:#d9dfe3;flex:1;max-width:112px}
+.step{display:flex;gap:8px;align-items:center;color:#79838c}
+.step span{width:23px;height:23px;display:grid;place-items:center;border-radius:50%;background:#e2e7e9;color:#71808c;font:500 11px "DM Mono"}
+.step strong{display:block;font-size:11px;color:#53606a}
+.step small{display:block;font-size:10px}
+.step.active span{background:#dbe8ff;color:#3168bd}
+.step.active strong{color:#2e5fa9}
+.capture-grid{display:grid;grid-template-columns:1.35fr .9fr;gap:17px}
+.card,.video-card,.rail-card{background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow)}
+.capture-card,.import-card{padding:21px}
+.card-heading,.rail-heading{display:flex;justify-content:space-between;gap:16px}
+.card h2,.rail-card h3{margin:5px 0 0;font:600 16px "DM Sans"}
+.status-pill{border-radius:12px;background:#eef1f3;color:#737e86;padding:4px 8px;height:max-content;font:10px "DM Mono"}
+.status-pill.recording{background:#fff0ee;color:#b7453c}
+.support{color:#76818a;font-size:12px;line-height:1.5;margin:13px 0}
+.record-controls{display:flex;align-items:center;gap:10px;margin:20px 0 15px}
+.timer{margin-left:auto;color:#626d75;font:12px "DM Mono"}
+.capture-foot{display:flex;justify-content:space-between;border-top:1px solid #e8ebec;padding-top:11px;color:#89929a;font-size:10px}
+.file-drop{min-height:104px;border:1px dashed #bfcbd3;border-radius:7px;display:grid;place-content:center;text-align:center;cursor:pointer;color:#53626d}
+.file-drop input,.workflow-import input{position:absolute;width:1px;height:1px;opacity:0}
+.file-drop:hover{background:#f7faff;border-color:#8aa7e3}
+.drop-icon{display:block;color:#4a78c7;font-size:20px}
+.file-drop strong{font-size:12px;margin-top:3px}
+.file-drop small{font-size:10px;color:#818b94;margin-top:2px}
+.download-link{display:block;margin-top:10px;color:#4c74b5;font-size:11px}
+.workspace{margin-top:43px}
+.replay-header{border-top:1px solid var(--line);padding:29px 0 18px;display:flex;justify-content:space-between;align-items:flex-end}
+.replay-header h2,.section-title h2{font:400 27px "Instrument Serif";margin:6px 0 0}
+.replay-header>div>p:last-child{margin:3px 0 0;color:#7a848d;font:11px "DM Mono"}
+.replay-counts{display:flex;gap:22px}
+.replay-counts div{border-left:1px solid #dbe1e4;padding-left:12px}
+.replay-counts strong{display:block;font:400 22px/1 "Instrument Serif"}
+.replay-counts small{font-size:10px;color:#7e8890}
+.video-layout{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:17px}
+.video-card{overflow:hidden}
+video{display:block;width:100%;background:#111923;aspect-ratio:16/9}
+.playhead-panel{padding:13px 15px;display:flex;align-items:end;gap:19px}
+.playhead-panel strong{display:block;font:500 19px "Instrument Serif"}
+.range-wrap{flex:1}
+.range-wrap label{display:block;color:#76818a;font-size:10px;margin-bottom:4px}
+.range-wrap input{width:47px;border:1px solid #d6dde1;border-radius:4px;padding:5px;font:11px "DM Mono";text-align:center}
+.range-wrap span{font-size:10px;color:#7e8890;margin:0 3px}
+.text-button{border:0;background:transparent;color:#4772b5;font:500 11px "DM Sans";padding:5px;cursor:pointer}
+.compact{padding:9px 11px;white-space:nowrap}
+.right-rail{display:grid;gap:14px;align-content:start}
+.rail-card{padding:17px}
+.rail-heading h3{font-size:14px}
+.filter-row{display:flex;flex-wrap:wrap;gap:5px;margin:14px 0 10px}
+.filter{border:1px solid #d7dfe4;border-radius:11px;background:#fff;color:#68747e;padding:4px 7px;font:10px "DM Mono";cursor:pointer}
+.filter.active{background:#eff4ff;border-color:#c7d8fa;color:#3a68aa}
+.search{border:1px solid #d7dfe3;border-radius:5px;padding:8px 9px;width:100%;font:11px "DM Sans";outline-color:var(--blue)}
+.segment-list{display:grid;gap:6px;margin:10px 0;max-height:226px;overflow:auto}
+.empty{color:#89929a;font-size:11px;line-height:1.5;padding:9px 0}
+.segment{width:100%;text-align:left;border:1px solid #e0e5e7;border-left:3px solid var(--marker,#7a60bc);border-radius:5px;background:#fff;padding:8px 9px;cursor:pointer}
+.segment:hover{background:#f8fafb}
+.segment-head{display:flex;justify-content:space-between;gap:8px;color:#68747e;font:10px "DM Mono"}
+.segment strong{display:block;color:#3d4750;font-size:11px;margin:3px 0}
+.segment small{display:block;color:#7e8991;font-size:10px;line-height:1.35}
+.workflow-import{display:block;border-top:1px solid #e8ecee;padding-top:11px;color:#5375aa;font-size:10px;cursor:pointer}
+.workflow-import small{display:block;color:#8b949b;margin-top:2px}
+.method-card{display:flex;gap:8px;background:#f5f7f6;box-shadow:none}
+.method-card span{color:#7960bf}
+.method-card p{margin:0;color:#758089;font-size:10px;line-height:1.5}
+.method-card strong{color:#4f5b64}
+.filmstrip-section,.annotation-section{margin-top:33px;border-top:1px solid var(--line);padding-top:24px}
+.section-title{display:flex;justify-content:space-between;align-items:end}
+.sampling{display:flex;align-items:center;gap:7px;color:#76818a;font-size:11px}
+.sampling select{border:1px solid #d5dce0;border-radius:5px;padding:6px;background:#fff;font-size:11px}
+.filmstrip{display:flex;gap:10px;overflow-x:auto;padding:16px 0 8px}
+.frame{position:relative;flex:0 0 160px;padding:0;border:1px solid #dbe1e4;border-radius:6px;background:#fff;overflow:hidden;cursor:pointer}
+.frame.active{outline:2px solid #78a0ea;outline-offset:1px}
+.frame img{display:block;width:100%;height:91px;object-fit:cover;background:#e9edef}
+.frame span{display:block;padding:5px 7px;color:#64717b;font:10px "DM Mono";text-align:left}
+.frame i{position:absolute;top:5px;right:5px;border-radius:9px;background:rgba(18,29,40,.75);color:#fff;padding:2px 5px;font:9px "DM Mono";font-style:normal}
+.spark-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:15px}
+.spark-card{border:1px solid var(--line);border-left:3px solid var(--spark,#755ab8);border-radius:8px;background:#fff;padding:15px}
+.spark-head{display:flex;justify-content:space-between;gap:8px;align-items:start}
+.chip{border-radius:10px;padding:4px 7px;background:#f0ebff;color:#6c4eae;font:10px "DM Mono";text-transform:uppercase}
+.spark-time{color:#7e8992;font:10px "DM Mono"}
+.spark-card p{font:400 17px/1.28 "Instrument Serif";margin:10px 0 6px}
+.spark-card footer{color:#7b858d;font-size:10px;line-height:1.45}
+.how-it-works{margin-top:47px;border-radius:9px;background:#10161f;color:#d6dee7;padding:23px;display:flex;align-items:center;justify-content:space-between;gap:32px}
+.how-it-works .eyebrow{color:#8292a3}
+.how-it-works h2{font:400 25px/1 "Instrument Serif";margin:6px 0 0}
+.how-it-works ol{margin:0;padding:0;list-style:none;display:flex;gap:16px}
+.how-it-works li{display:flex;gap:7px;max-width:174px;color:#aab5c2;font-size:10px;line-height:1.45}
+.how-it-works li span{color:#8fb0fb;font:12px "DM Mono"}
+.how-it-works li p{margin:0}
+.modal-backdrop{position:fixed;inset:0;background:rgba(13,20,29,.48);display:grid;place-items:center;padding:20px;z-index:5}
+.modal{position:relative;background:#fff;border-radius:12px;width:min(660px,100%);padding:28px;box-shadow:0 20px 55px rgba(0,0,0,.23);max-height:calc(100vh - 40px);overflow:auto}
+.small-modal{width:min(520px,100%)}
+.close{position:absolute;right:16px;top:13px;border:0;background:transparent;color:#6d7780;font-size:26px;cursor:pointer}
+.modal h2{font:400 29px/1 "Instrument Serif";margin:7px 0}
+.modal-intro{color:#707a83;font-size:12px;line-height:1.45;margin:0 0 18px}
+.modal label{display:grid;gap:6px;color:#55616b;font:500 11px "DM Sans";margin:13px 0}
+.modal select,.modal input,.modal textarea{border:1px solid #d5dde1;border-radius:6px;background:#fff;color:#2f3840;padding:9px;font:12px "DM Sans";outline-color:var(--blue)}
+.modal textarea{min-height:84px;resize:vertical;line-height:1.45}
+.taxonomy-block{margin:16px 0}
+.form-label{font:500 11px "DM Sans";color:#55616b;margin:0}
+.form-help{margin:4px 0 7px;color:#7a848c;font-size:10px}
+.picker{display:flex;flex-wrap:wrap;gap:5px}
+.choice{background:#fff;border:1px solid #d8dfe3;border-radius:13px;color:#5b6871;padding:5px 8px;font:10px "DM Mono";cursor:pointer}
+.choice.selected{background:var(--bg);border-color:var(--color);color:var(--color)}
+.trigger-picker .choice.selected::after{content:"✓";font-weight:700;margin-left:4px}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}
+.toast{position:fixed;z-index:10;right:24px;bottom:25px;background:#18212b;color:#fff;border-radius:7px;padding:11px 14px;font-size:12px;box-shadow:0 7px 21px rgba(0,0,0,.2)}
+code{font:10px "DM Mono";background:#263340;color:#d2dded;border-radius:3px;padding:2px 4px}
+@media(max-width:850px){.capture-grid,.video-layout{grid-template-columns:1fr}
+.privacy-note{display:none}
+.spark-list{grid-template-columns:1fr}
+.how-it-works{display:block}
+.how-it-works ol{margin-top:18px}
+.topbar{padding:0 20px}
+.top-actions .local-status{display:none}
+}
+@media(max-width:560px){main{padding:28px 16px 50px}
+.topbar{gap:12px}
+.brand{font-size:0}
+.brand span{font-size:21px}
+.session-title{min-width:0}
+.session-title input{max-width:150px}
+.top-actions .ghost-button{font-size:0;padding:9px}
+.top-actions .ghost-button::after{content:"Export";font-size:11px}
+.hero h1{font-size:34px}
+.stepper{gap:4px}
+.stepper>i{max-width:30px}
+.step small{display:none}
+.capture-foot{display:block}
+.capture-foot span{display:block;margin:3px 0}
+.playhead-panel{align-items:start;flex-wrap:wrap}
+.range-wrap{order:3;flex-basis:100%}
+.how-it-works ol{display:grid;gap:11px}
+.two-col{grid-template-columns:1fr}
+.sampling{flex-wrap:wrap;justify-content:end}
+}
+
+/* Assisted-review queue: proposed moments remain hypotheses until a participant confirms one. */
+.candidate-section{margin-top:33px;border-top:1px solid var(--line);padding-top:24px}
+.candidate-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px;margin-top:15px}
+.candidate-card{border:1px solid #d9e0e3;border-top:3px solid var(--candidate,#597bb7);border-radius:8px;background:#fff;padding:14px}
+.candidate-card.confirmed{border-top-color:#2c8b71;background:#f7fcfa}
+.candidate-card .candidate-top{display:flex;justify-content:space-between;align-items:start;gap:8px}
+.candidate-card h3{margin:6px 0 5px;color:#34434e;font-size:14px;line-height:1.25}
+.candidate-card p{margin:0;color:#687680;font-size:12px;line-height:1.45}
+.candidate-card footer{display:flex;justify-content:space-between;align-items:center;gap:6px;margin-top:12px}
+.candidate-time,.candidate-status{font:10px "DM Mono";color:#5c7180}
+.candidate-status{border-radius:9px;background:#edf3f8;padding:3px 5px;text-transform:uppercase}
+.candidate-card.confirmed .candidate-status{background:#dff4ea;color:#25745f}
+.candidate-actions{display:flex;gap:4px}
+.candidate-actions .text-button{padding:4px}
+@media(max-width:850px){.candidate-list{grid-template-columns:1fr}
+.replay-counts{gap:12px}
+}
+@media(max-width:560px){.replay-counts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+}

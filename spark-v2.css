@@ -1,0 +1,23 @@
+.taxonomy-grid { display: grid; grid-template-columns: 1fr; gap: 30px; }
+.taxonomy-group { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 18px; padding-top: 4px; }
+.taxonomy-group-heading h2 { font: 400 24px "Instrument Serif"; margin: 6px 0; }
+.taxonomy-group-heading > p:last-child { margin: 0; color: #78828b; font-size: 11px; line-height: 1.5; }
+.taxonomy-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.taxonomy-card { min-height: 142px; }
+.taxonomy-form-block { margin: 16px 0; }
+.form-label { margin: 0; color: #55616b; font: 500 11px "DM Sans"; }
+.form-helper { margin: 4px 0 8px; color: #7a848d; font-size: 10px; line-height: 1.4; }
+.type-option.selected { background: var(--choice-bg, var(--purple-soft)); color: var(--choice, #6645ad); border-color: var(--choice, #bca8eb); }
+.trigger-picker .type-option.selected::after { content: "✓"; font-weight: 700; margin-left: 5px; }
+.impact-picker .type-option { font-weight: 500; }
+.annotation-modal { max-height: calc(100vh - 40px); overflow: auto; }
+
+@media (max-width: 900px) {
+  .taxonomy-group { grid-template-columns: 1fr; }
+  .taxonomy-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 630px) {
+  .taxonomy-cards { grid-template-columns: 1fr; }
+  .taxonomy-group { gap: 12px; }
+}

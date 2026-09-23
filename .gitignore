@@ -1,0 +1,6 @@
+.DS_Store
+*.webm
+*.mp4
+*.mov
+spark-trace-replay.json
+workflow.json

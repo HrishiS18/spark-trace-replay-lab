@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#10161f" />
+    <title>Spark Trace Replay Lab</title>
+    <link rel="stylesheet" href="./replay.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="./index.html"><span>✦</span> Spark Trace</a>
+      <div class="session-title"><span class="eyebrow">REPLAY LAB</span><input id="sessionName" value="Consulting research session" aria-label="Session name" /></div>
+      <div class="top-actions"><span class="local-status">● Local-only session</span><button class="ghost-button" id="exportButton">Export annotations</button></div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div>
+          <p class="eyebrow">SCREEN RECORD → REPLAY → REFLECT</p>
+          <h1>Find the moments that redirected your thinking.</h1>
+          <p>Record a 30-minute consulting task with Codex, then use change points, workflow segments, and AI cues to revisit the moments worth annotating.</p>
+        </div>
+        <aside class="privacy-note"><span>⌁</span><p><strong>Capture boundary</strong><br />Record only a dedicated study workspace. The video stays in this browser until you save it or export its annotations.</p></aside>
+      </section>
+
+      <section class="stepper" aria-label="Replay workflow">
+        <div class="step active"><span>1</span><div><strong>Capture</strong><small>Record or import</small></div></div>
+        <i></i>
+        <div class="step"><span>2</span><div><strong>Navigate</strong><small>Frames + workflow</small></div></div>
+        <i></i>
+        <div class="step"><span>3</span><div><strong>Annotate</strong><small>Sparks in context</small></div></div>
+      </section>
+
+      <section class="capture-grid">
+        <article class="card capture-card">
+          <div class="card-heading"><div><p class="eyebrow">A. CAPTURE A SESSION</p><h2>Screen recording</h2></div><span id="recordStatus" class="status-pill">Ready</span></div>
+          <p class="support">Start this immediately before working with Codex. When the browser asks, share the task window or a dedicated desktop—not your whole normal workspace.</p>
+          <div class="record-controls">
+            <button class="primary-button" id="recordButton">● Start 30-min recording</button>
+            <button class="danger-button hidden" id="stopButton">■ Stop & prepare replay</button>
+            <span id="recordTimer" class="timer">00:00 / 30:00</span>
+          </div>
+          <div class="capture-foot"><span>Screen video + optional system audio</span><span>Video is never uploaded by this tool</span></div>
+        </article>
+
+        <article class="card import-card">
+          <div class="card-heading"><div><p class="eyebrow">B. OR IMPORT</p><h2>Existing recording</h2></div></div>
+          <p class="support">Load an MP4, WebM, or MOV screen recording. The file is read locally by your browser.</p>
+          <label class="file-drop" for="videoInput"><input id="videoInput" type="file" accept="video/*" /><span class="drop-icon">↥</span><strong>Choose a screen recording</strong><small>MP4, WebM, MOV</small></label>
+          <a class="download-link hidden" id="videoDownload" download="spark-trace-recording.webm">↓ Save captured recording</a>
+        </article>
+      </section>
+
+      <section id="workspace" class="workspace hidden">
+        <div class="replay-header">
+          <div><p class="eyebrow">SESSION REPLAY</p><h2 id="videoLabel">Untitled recording</h2><p id="durationLabel">Preparing video…</p></div>
+          <div class="replay-counts"><div><strong id="frameCount">0</strong><small>change points</small></div><div><strong id="segmentCount">0</strong><small>workflow segments</small></div><div><strong id="candidateCount">0</strong><small>review prompts</small></div><div><strong id="sparkCount">0</strong><small>sparks</small></div></div>
+        </div>
+
+        <div class="video-layout">
+          <article class="video-card">
+            <video id="replayVideo" controls playsinline></video>
+            <div class="playhead-panel">
+              <div><span class="eyebrow">PLAYHEAD</span><strong id="playhead">00:00</strong></div>
+              <div class="range-wrap"><label for="rangeStart">Annotate a moment or interval</label><div><input id="rangeStart" type="number" min="0" step="1" value="0" /><span>to</span><input id="rangeEnd" type="number" min="0" step="1" value="0" /><span>sec</span><button class="text-button" id="usePlayhead">Use playhead</button></div></div>
+              <button class="primary-button compact" id="openSparkButton">Capture spark →</button>
+            </div>
+          </article>
+
+          <aside class="right-rail">
+            <article class="rail-card">
+              <div class="rail-heading"><div><p class="eyebrow">WORKFLOW NAVIGATION</p><h3>Find a moment faster</h3></div><button class="text-button" id="openSegmentButton">+ Segment</button></div>
+              <div class="filter-row" id="filters">
+                <button class="filter active" data-filter="all">All</button>
+                <button class="filter" data-filter="ai">AI cue</button>
+                <button class="filter" data-filter="source">Source</button>
+                <button class="filter" data-filter="draft">Draft</button>
+                <button class="filter" data-filter="calculate">Table / calc</button>
+              </div>
+              <input id="segmentSearch" class="search" placeholder="Search workflow labels or notes" aria-label="Search workflow segments" />
+              <div class="segment-list" id="segmentList"></div>
+              <label class="workflow-import" for="workflowInput"><input id="workflowInput" type="file" accept=".json,application/json" />⌁ Import workflow.json <small>Optional companion output from Workflow Induction Toolkit</small></label>
+            </article>
+            <article class="rail-card method-card"><span>◌</span><p><strong>Suggestions are not labels</strong><br />Video changes and workflow events can propose a moment to review. Only the participant can confirm, edit, or dismiss a spark.</p></article>
+          </aside>
+        </div>
+
+        <section class="filmstrip-section">
+          <div class="section-title"><div><p class="eyebrow">VISUAL TIMELINE</p><h2>Change-point filmstrip</h2></div><div class="sampling"><label for="sampleInterval">Sample every</label><select id="sampleInterval"><option value="15">15 sec</option><option value="30" selected>30 sec</option><option value="60">60 sec</option></select><button class="ghost-button" id="buildFrames">Rebuild frames</button></div></div>
+          <p class="support">Frames are generated locally from the recording. Add a workflow segment or spark when a thumbnail reminds you of a meaningful turn.</p>
+          <div class="filmstrip" id="filmstrip"></div>
+        </section>
+
+        <section class="candidate-section">
+          <div class="section-title"><div><p class="eyebrow">ASSISTED REVIEW QUEUE</p><h2>Candidate moments to consider</h2></div><button class="ghost-button" id="generateCandidates">Refresh suggestions</button></div>
+          <p class="support">The tool proposes moments from visible context changes and imported workflow activity: AI turns, source transitions, pauses, rapid switching, corrections, and workflow boundaries. These are prompts for review—not inferred sparks.</p>
+          <div class="candidate-list" id="candidateList"></div>
+        </section>
+
+        <section class="annotation-section">
+          <div class="section-title"><div><p class="eyebrow">CAPTURED SPARKS</p><h2>Participant interpretation, linked to evidence</h2></div><button class="text-button" id="jumpToCurrent">Jump to playhead ↑</button></div>
+          <div class="spark-list" id="sparkList"></div>
+        </section>
+      </section>
+
+      <section class="how-it-works">
+        <div><p class="eyebrow">OPTIONAL COMPANION PIPELINE</p><h2>Pair video replay with workflow induction.</h2></div>
+        <ol>
+          <li><span>1</span><p>Record the visual session here or import its video.</p></li>
+          <li><span>2</span><p>Optionally run the Workflow Induction Toolkit on a parallel, consented computer-use capture.</p></li>
+          <li><span>3</span><p>Import its <code>workflow.json</code>; use its steps to jump through the video and annotate sparks.</p></li>
+        </ol>
+      </section>
+    </main>
+
+    <div class="modal-backdrop hidden" id="sparkModal">
+      <section class="modal" role="dialog" aria-modal="true" aria-labelledby="sparkModalTitle">
+        <button class="close" data-close="sparkModal" aria-label="Close">×</button>
+        <p class="eyebrow">CAPTURE A SPARK</p><h2 id="sparkModalTitle">Name the shift, then its trigger.</h2>
+        <p class="modal-intro">This annotation will be linked to <strong id="sparkMoment">00:00</strong> in the recording. Describe a change in your thinking—not whether the AI was correct.</p>
+        <form id="sparkForm">
+          <label>What was the cue?<select id="cueType"><option>AI response visible on screen</option><option>Source / document evidence</option><option>My own question or note</option><option>Contrast, conflict, or error</option><option>Other screen moment</option></select></label>
+          <label>Cue note <input id="cueNote" placeholder="e.g. Codex used the prior fiscal-year column" /></label>
+          <div class="taxonomy-block"><p class="form-label">1. What changed in your thinking?</p><p class="form-help">Choose the primary dimension of change.</p><div class="picker" id="changePicker"></div></div>
+          <div class="taxonomy-block"><p class="form-label">2. What triggered that change?</p><p class="form-help">Choose every kind of cue that mattered.</p><div class="picker" id="triggerPicker"></div></div>
+          <label>What changed for you?<textarea id="sparkText" required placeholder="Before this, I was… After this cue, I began to…"></textarea></label>
+          <div class="two-col"><label>Confidence<select id="confidence"><option>Emerging — I want to follow it</option><option>Likely — it redirected my next step</option><option>Confirmed — it shaped the recommendation</option></select></label><label>What happened next?<select id="outcome"><option>I explored another source</option><option>I revised a claim</option><option>I changed the recommendation</option><option>I set it aside</option></select></label></div>
+          <div class="modal-actions"><button type="button" class="ghost-button" data-close="sparkModal">Cancel</button><button class="primary-button" type="submit">Save spark →</button></div>
+        </form>
+      </section>
+    </div>
+
+    <div class="modal-backdrop hidden" id="segmentModal">
+      <section class="modal small-modal" role="dialog" aria-modal="true" aria-labelledby="segmentModalTitle">
+        <button class="close" data-close="segmentModal" aria-label="Close">×</button>
+        <p class="eyebrow">ADD A NAVIGATION MARKER</p><h2 id="segmentModalTitle">Describe what was happening.</h2>
+        <form id="segmentForm">
+          <label>Label <input id="segmentLabel" required placeholder="e.g. Compared FY23 and FY24 risk disclosures" /></label>
+          <div class="two-col"><label>Start (sec)<input id="segmentStart" type="number" min="0" step="1" required /></label><label>End (sec)<input id="segmentEnd" type="number" min="0" step="1" required /></label></div>
+          <label>Activity type<select id="segmentKind"><option value="source">Source / document</option><option value="ai">AI cue</option><option value="draft">Draft / recommendation</option><option value="calculate">Table / calculation</option><option value="other">Other</option></select></label>
+          <label>Note <textarea id="segmentNote" placeholder="Optional reminder for the replay"></textarea></label>
+          <div class="modal-actions"><button type="button" class="ghost-button" data-close="segmentModal">Cancel</button><button class="primary-button" type="submit">Save marker →</button></div>
+        </form>
+      </section>
+    </div>
+    <div class="toast hidden" id="toast"></div>
+    <script src="./replay.js"></script>
+  </body>
+</html>

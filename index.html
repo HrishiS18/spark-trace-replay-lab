@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#10161f" />
+    <title>Spark Trace — creative work, made inspectable</title>
+    <link rel="stylesheet" href="./spark.css" />
+    <link rel="stylesheet" href="./spark-v2.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <a class="brand" href="#top" aria-label="Spark Trace home"><span class="brand-mark">✦</span> Spark Trace</a>
+        <nav class="nav" aria-label="Workspace navigation">
+          <button class="nav-item active" data-view="studio"><span>⌁</span> Studio</button>
+          <button class="nav-item" data-view="trajectory"><span>↗</span> Trajectory <b id="trajectoryCount">7</b></button>
+          <button class="nav-item" data-view="library"><span>◫</span> Spark library</button>
+          <a class="nav-item" href="./replay.html"><span>◉</span> Replay Lab</a>
+        </nav>
+        <div class="sidebar-bottom">
+          <div class="consent-note"><span class="lock">⌁</span><p><strong>Your trace stays yours.</strong><br />This prototype stores sessions locally until you export or share them.</p></div>
+          <button class="text-button" id="resetDemo">↻ Reset demo</button>
+        </div>
+      </aside>
+
+      <main id="top" class="workspace">
+        <header class="topbar">
+          <div class="project-title"><span class="eyebrow">RESEARCH SESSION</span><input id="sessionTitle" aria-label="Session title" value="Making proofs feel alive" /></div>
+          <div class="topbar-actions"><span class="saved" id="saveState"><i></i> Saved locally</span><button class="button button-ghost" id="exportButton">Export trace</button><button class="avatar" aria-label="Profile">HS</button></div>
+        </header>
+
+        <section id="studioView" class="studio-view">
+          <section class="intro-bar">
+            <div><p class="eyebrow">ANNOTATED CO-CREATION</p><h1>What changed in your thinking?</h1><p class="subtle">Write with an AI, then capture the moments that redirected your work — even when the suggestion itself was wrong.</p></div>
+            <div class="session-pulse"><span class="pulse-dot"></span><div><strong id="sparkTotal">2</strong><small>sparks captured</small></div><div class="pulse-rule"></div><div><strong id="turnTotal">7</strong><small>trace events</small></div></div>
+          </section>
+
+          <section class="work-grid">
+            <article class="writing-panel panel">
+              <div class="panel-header"><div><p class="eyebrow">YOUR DRAFT</p><h2>Notes toward a proof</h2></div><span class="word-count" id="wordCount">68 words</span></div>
+              <textarea id="draft" spellcheck="true">I keep wanting the proof to begin with the construction, but that makes the invariant disappear. Maybe the right object is not the sequence itself, but the space of all trajectories that respect the local rule.
+
+If that is right, the difficult step becomes showing that the space is compact enough for a limit argument. The obstruction is probably not computational; it is representational.</textarea>
+              <div class="editor-footer"><span><kbd>⌘</kbd> <kbd>↵</kbd> ask AI</span><span id="editState">Last edit just now</span></div>
+            </article>
+
+            <article class="ai-panel panel">
+              <div class="panel-header"><div><p class="eyebrow">AI COLLABORATOR</p><h2>Explore the next move</h2></div><button id="newSuggestion" class="icon-button" title="New suggestion" aria-label="New suggestion">↻</button></div>
+              <div id="chatStream" class="chat-stream" aria-live="polite"></div>
+              <form id="promptForm" class="prompt-box"><textarea id="promptInput" aria-label="Message the AI" placeholder="Ask a question, try a counterfactual…"></textarea><button class="send-button" aria-label="Send message" type="submit">↑</button></form>
+            </article>
+          </section>
+
+          <section class="annotation-prompt" id="annotationPrompt">
+            <div class="spark-glyph">✦</div><div><p class="eyebrow">REFLECTION NUDGE</p><h2>Did anything here change how you see the problem?</h2><p>Tag a moment before it fades. You are documenting the change in <em>your</em> thinking, not grading the AI.</p></div><button class="button" id="openAnnotation">Capture a spark <span>→</span></button>
+          </section>
+
+          <section class="recent-section">
+            <div class="section-heading"><div><p class="eyebrow">RECENTLY CAPTURED</p><h2>Moments worth returning to</h2></div><button class="text-button" data-view="trajectory">See full trajectory →</button></div>
+            <div class="spark-cards" id="sparkCards"></div>
+          </section>
+        </section>
+
+        <section id="trajectoryView" class="secondary-view hidden">
+          <div class="secondary-heading"><p class="eyebrow">SESSION REPLAY</p><h1>Trajectory, not transcript.</h1><p>Inspect the moves, pauses, revisions, and sparks that made this session take its particular path.</p></div>
+          <div class="trajectory-layout"><section class="trace-card"><div class="trace-head"><div><h2>Interaction trace</h2><p><span class="legend human"></span> You <span class="legend ai"></span> AI <span class="legend spark"></span> Spark</p></div><button class="button button-ghost" id="addCheckpoint">+ Add checkpoint</button></div><ol class="timeline" id="timeline"></ol></section><aside class="insight-panel"><p class="eyebrow">TRACE READING</p><h2>What the trajectory suggests</h2><div id="trajectoryInsights"></div><div class="method-note"><span>◌</span><p><strong>Research prompt</strong><br />Compare a captured spark to the next two human moves. Did it redirect action, only prompt reflection, or leave no trace?</p></div></aside></div>
+        </section>
+
+        <section id="libraryView" class="secondary-view hidden">
+          <div class="secondary-heading"><p class="eyebrow">WORKING TAXONOMY</p><h1>A spark has two coordinates.</h1><p>First: what changed in the person’s thinking? Second: what kind of cue set that change in motion? The two should not be collapsed into one label.</p></div>
+          <div class="taxonomy-tools"><input id="taxonomySearch" placeholder="Search changes or triggers" aria-label="Search changes or triggers" /><span id="taxonomyResult">6 changes · 7 triggers</span></div><div class="taxonomy-grid" id="taxonomyGrid"></div>
+        </section>
+      </main>
+    </div>
+
+    <div class="modal-backdrop hidden" id="modalBackdrop">
+      <section class="annotation-modal" role="dialog" aria-modal="true" aria-labelledby="annotationTitle">
+        <button class="modal-close" id="closeAnnotation" aria-label="Close">×</button><p class="eyebrow">CAPTURE A SPARK</p><h2 id="annotationTitle">Name the shift, not the suggestion.</h2><p class="modal-lede">Select the cue that mattered, then describe what became newly possible in your thinking.</p>
+        <form id="annotationForm">
+          <label>Source moment<select id="sourceMoment"></select></label>
+          <div class="taxonomy-form-block"><p class="form-label">1. What changed in your thinking?</p><p class="form-helper">Choose the primary dimension of change.</p><div class="type-picker impact-picker" id="impactPicker"></div></div>
+          <div class="taxonomy-form-block"><p class="form-label">2. What triggered that change?</p><p class="form-helper">Select every cue that mattered. It is fine to leave this uncertain.</p><div class="type-picker trigger-picker" id="triggerPicker"></div></div>
+          <label>What changed for you?<textarea id="sparkDescription" placeholder="e.g. I stopped trying to prove a property of each trajectory and started looking for structure in the whole space." required></textarea></label>
+          <div class="form-row"><label>Confidence<select id="sparkConfidence"><option>Emerging — I want to follow it</option><option>Likely — it redirected my next step</option><option>Confirmed — it shaped the draft</option></select></label><label>What happened next?<select id="sparkOutcome"><option>I explored it</option><option>I revised my framing</option><option>I found a tool / source</option><option>I set it aside</option></select></label></div>
+          <div class="modal-actions"><button class="button button-ghost" type="button" id="cancelAnnotation">Cancel</button><button class="button" type="submit">Save spark <span>→</span></button></div>
+        </form>
+      </section>
+    </div>
+    <div class="toast hidden" id="toast"></div>
+    <script src="./spark.js"></script>
+  </body>
+</html>
