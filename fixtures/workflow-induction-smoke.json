@@ -1,0 +1,10 @@
+{
+  "node_type": "sequence",
+  "goal": null,
+  "status": "success",
+  "nodes": [
+    {"node_type": "sequence", "goal": "Open a source document", "status": "success", "nodes": [{"node_type": "action", "action": "click_left(420.0, 300.0)", "goal": "Open the source document", "state": {"before": "before-1.jpg", "after": "after-1.jpg"}, "time": {"before": 1735689600.3, "after": 1735689600.7}}]},
+    {"node_type": "sequence", "goal": "Ask Codex about the source", "status": "success", "nodes": [{"node_type": "action", "action": "key_press('Compare this evidence')", "goal": "Prompt Codex to compare evidence", "state": {"before": "before-2.jpg", "after": "after-2.jpg"}, "time": {"before": 1735689601.1, "after": 1735689601.6}}]},
+    {"node_type": "sequence", "goal": "Revise the recommendation after a contradiction", "status": "success", "nodes": [{"node_type": "action", "action": "key_press('Revise recommendation')", "goal": "Correct the recommendation", "state": {"before": "before-3.jpg", "after": "after-3.jpg"}, "time": {"before": 1735689602.0, "after": 1735689602.5}}]}
+  ]
+}

@@ -49,6 +49,8 @@
           <p class="support">Load an MP4, WebM, or MOV screen recording. The file is read locally by your browser.</p>
           <label class="file-drop" for="videoInput"><input id="videoInput" type="file" accept="video/*" /><span class="drop-icon">↥</span><strong>Choose a screen recording</strong><small>MP4, WebM, MOV</small></label>
           <a class="download-link hidden" id="videoDownload" download="spark-trace-recording.webm">↓ Save captured recording</a>
+          <label class="manifest-import" for="sessionManifestInput"><input id="sessionManifestInput" type="file" accept=".json,application/json" />⌁ Load session alignment manifest <small>Needed to align a saved video with raw Workflow Induction output</small></label>
+          <a class="download-link hidden" id="manifestDownload" download="spark-trace-session.json">↓ Save session alignment manifest</a>
         </article>
       </section>
 
@@ -81,6 +83,7 @@
               <input id="segmentSearch" class="search" placeholder="Search workflow labels or notes" aria-label="Search workflow segments" />
               <div class="segment-list" id="segmentList"></div>
               <label class="workflow-import" for="workflowInput"><input id="workflowInput" type="file" accept=".json,application/json" />⌁ Import workflow.json <small>Optional companion output from Workflow Induction Toolkit</small></label>
+              <p class="alignment-status" id="alignmentStatus">Workflow alignment: waiting for an import</p>
             </article>
             <article class="rail-card method-card"><span>◌</span><p><strong>Suggestions are not labels</strong><br />Video changes and workflow events can propose a moment to review. Only the participant can confirm, edit, or dismiss a spark.</p></article>
           </aside>

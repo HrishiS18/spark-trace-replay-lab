@@ -1,0 +1,4 @@
+{
+  "schema": "spark-trace/session-manifest/v1",
+  "recording": {"videoName": "synthetic-smoke-test.webm", "startedAtEpochSeconds": 1735689600, "durationSeconds": 3}
+}

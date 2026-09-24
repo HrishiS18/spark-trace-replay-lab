@@ -8,9 +8,10 @@ It records a focused desktop session, replays it locally, proposes moments worth
 
 1. Record a focused task session with Codex or another LLM.
 2. Save the local WebM recording when the session ends.
-3. Replay the video and review automatically proposed moments.
-4. Confirm, edit, or dismiss each candidate; only confirmed items become spark annotations.
-5. Export the annotations JSON and keep it next to the video.
+3. Save the paired session-alignment manifest alongside the video.
+4. Replay the video and review automatically proposed moments.
+5. Confirm, edit, or dismiss each candidate; only confirmed items become spark annotations.
+6. Export the annotations JSON and keep it next to the video.
 
 The interface separates:
 
@@ -43,9 +44,28 @@ These are retrieval prompts only. The system does not claim that a cognitive spa
 
 ## Optional workflow companion
 
-The [Workflow Induction Toolkit](https://github.com/zorazrw/workflow-induction-toolkit) can produce a `workflow.json` from a separately captured, consented computer-use trace. Import that file in the right-hand **Workflow navigation** panel to create jump markers and richer review prompts.
+Spark Trace directly supports the native nested `workflow.json` produced by the [Workflow Induction Toolkit](https://github.com/zorazrw/workflow-induction-toolkit). It extracts each high-level node, aggregates the timestamps of its descendant actions, retains its status and screenshot-path evidence, and places the resulting workflow steps on the video timeline.
 
-The screen recording and computer-use trace are separate capture streams. Align them by starting both at the beginning of the task and keeping a session ID with the recording, workflow file, and annotation export.
+The screen recording and computer-use trace are separate capture streams. The Toolkit uses absolute event timestamps; the browser video uses relative playback time. Spark Trace bridges them through a session-alignment manifest.
+
+### Full paired capture
+
+1. Start `crec` from the Toolkit on a dedicated, consented study desktop.
+2. Start a Spark Trace recording. It stores the wall-clock start time locally.
+3. Work normally, then stop the Spark Trace recording.
+4. Save **both** `spark-trace-recording.webm` and **Save session alignment manifest**.
+5. Process the Toolkit trace into its native `workflow.json` following the Toolkit instructions.
+6. In Replay Lab, load the saved video, then **Load session alignment manifest**, then **Import workflow.json**.
+
+The imported steps should appear in the right-hand workflow list at their matching video times. The candidate queue then derives evidence-backed prompts from those steps: AI interactions, source transitions, corrections, pauses, rapid switching, and workflow boundaries.
+
+If the manifest and video do not belong to the same session, the interface refuses to place out-of-range steps rather than silently creating misleading markers.
+
+### Fixture for integration testing
+
+`fixtures/workflow-induction-workflow.json` has the real nested node shape expected from the Toolkit; `fixtures/spark-trace-session.json` supplies its matching video start time. With a test video at least 93 seconds long, importing both files places the three fixture steps at approximately `00:11`, `00:38–00:45`, and `01:24–01:32`.
+
+For a self-contained browser smoke test of the adapter, serve this repository and open <http://127.0.0.1:5173/tests/workflow-integration.html>. It generates a synthetic three-second video locally, imports a native nested Toolkit fixture and matching manifest, checks the three aligned markers, and exercises candidate confirmation.
 
 ## Data handling
 
@@ -53,5 +73,6 @@ The screen recording and computer-use trace are separate capture streams. Align 
 - Annotation export does not embed the video.
 - Use a dedicated study workspace; do not record personal messages, credentials, or unrelated windows.
 - Obtain consent and establish storage/de-identification procedures before collecting research data.
+- The Workflow Induction Toolkit can pass event-linked screenshots to a configured LLM while inducing and summarizing workflows. Review its model, API, retention, and consent configuration before using it with participant data.
 
 For a consulting-oriented study protocol and dataset ideas, see [consulting-extension.md](./consulting-extension.md).

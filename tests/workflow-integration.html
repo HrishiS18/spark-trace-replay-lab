@@ -1,0 +1,32 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>Spark Trace native Workflow Induction smoke test</title>
+<style>body{font:16px system-ui;margin:2rem;max-width:52rem}button{padding:.7rem 1rem}#result{margin-top:1rem;padding:1rem;background:#eef3f6;white-space:pre-wrap}iframe{width:100%;height:720px;border:1px solid #ccd6dc;margin-top:1rem}</style>
+<h1>Native Workflow Induction adapter smoke test</h1>
+<p>This creates a synthetic three-second WebM locally, loads the session manifest and native nested Toolkit fixture, then checks that three steps appear in Replay Lab.</p>
+<button id="run">Run smoke test</button><div id="result">Ready.</div><iframe id="app" src="../replay.html"></iframe>
+<script>
+const result = document.querySelector('#result'); const app = document.querySelector('#app');
+const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+function selectFile(input, file) { const dt = new DataTransfer(); dt.items.add(file); input.files = dt.files; input.dispatchEvent(new Event('change', { bubbles: true })); }
+async function makeVideo() {
+  const canvas = document.createElement('canvas'); canvas.width = 320; canvas.height = 180; const ctx = canvas.getContext('2d');
+  const stream = canvas.captureStream(10); const recorder = new MediaRecorder(stream, { mimeType: 'video/webm' }); const chunks = [];
+  recorder.ondataavailable = event => { if (event.data.size) chunks.push(event.data); };
+  const done = new Promise(resolve => recorder.onstop = resolve); recorder.start(); const started = performance.now();
+  while (performance.now() - started < 3100) { const time = performance.now() - started; ctx.fillStyle = time < 1000 ? '#1f4f82' : time < 2000 ? '#7d52b1' : '#ba654d'; ctx.fillRect(0,0,320,180); ctx.fillStyle = '#fff'; ctx.font = '24px sans-serif'; ctx.fillText('Synthetic ' + Math.floor(time / 1000), 76, 98); await wait(100); }
+  recorder.stop(); await done; stream.getTracks().forEach(track => track.stop()); return new File([new Blob(chunks, { type: 'video/webm' })], 'synthetic-smoke-test.webm', { type: 'video/webm' });
+}
+async function fixture(path, name) { const body = await (await fetch(path)).text(); return new File([body], name, { type: 'application/json' }); }
+document.querySelector('#run').onclick = async () => {
+  try {
+    result.textContent = 'Creating a local synthetic video…'; const video = await makeVideo(); const doc = app.contentDocument;
+    selectFile(doc.querySelector('#videoInput'), video); await wait(700);
+    selectFile(doc.querySelector('#sessionManifestInput'), await fixture('../fixtures/spark-trace-session-smoke.json', 'spark-trace-session-smoke.json')); await wait(100);
+    selectFile(doc.querySelector('#workflowInput'), await fixture('../fixtures/workflow-induction-smoke.json', 'workflow-induction-smoke.json')); await wait(500);
+    const count = doc.querySelector('#segmentCount').textContent; const status = doc.querySelector('#alignmentStatus').textContent;
+    if (count !== '3') throw new Error('Expected 3 aligned workflow steps; saw ' + count + '. ' + status);
+    result.textContent = 'PASS\n' + status + '\nNative nested Workflow Induction nodes were aligned to the synthetic video.';
+  } catch (error) { result.textContent = 'FAIL\n' + error.message; throw error; }
+};
+</script>

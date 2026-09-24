@@ -1,0 +1,50 @@
+{
+  "node_type": "sequence",
+  "goal": null,
+  "status": "success",
+  "status_reason": "Synthetic fixture for testing Spark Trace's native Workflow Induction adapter.",
+  "nodes": [
+    {
+      "node_type": "sequence",
+      "goal": "Review the client's FY24 risk disclosure in a browser",
+      "status": "success",
+      "nodes": [
+        {
+          "node_type": "action",
+          "action": "click_left(440.0, 320.0)",
+          "goal": "Open the risk-disclosure source document",
+          "state": {"before": "screenshots/1735689611_click_before.jpg", "after": "screenshots/1735689612_click_after.jpg"},
+          "time": {"before": 1735689611.2, "after": 1735689612.1, "range": 0.9, "diff": 0.4}
+        }
+      ]
+    },
+    {
+      "node_type": "sequence",
+      "goal": "Ask Codex to compare the reported risk factors",
+      "status": "success",
+      "nodes": [
+        {
+          "node_type": "action",
+          "action": "key_press('Compare the material risks')",
+          "goal": "Prompt Codex to compare risk factors",
+          "state": {"before": "screenshots/1735689638_key_first.jpg", "after": "screenshots/1735689645_key_final.jpg"},
+          "time": {"before": 1735689638.4, "after": 1735689645.2, "range": 6.8, "diff": 1.2}
+        }
+      ]
+    },
+    {
+      "node_type": "sequence",
+      "goal": "Revise the recommendation after finding a contradiction",
+      "status": "success",
+      "nodes": [
+        {
+          "node_type": "action",
+          "action": "key_press('Revise recommendation')",
+          "goal": "Correct the recommendation using the source evidence",
+          "state": {"before": "screenshots/1735689684_key_first.jpg", "after": "screenshots/1735689692_key_final.jpg"},
+          "time": {"before": 1735689684.0, "after": 1735689692.8, "range": 8.8, "diff": 2.1}
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "schema": "spark-trace/session-manifest/v1",
+  "createdAt": "2025-01-01T00:00:00.000Z",
+  "recording": {
+    "videoName": "example-session.webm",
+    "startedAtEpochSeconds": 1735689600,
+    "durationSeconds": 120
+  },
+  "note": "Pairs with workflow-induction-workflow.json. The first workflow step appears around 00:11."
+}

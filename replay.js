@@ -15,7 +15,10 @@ const triggers = [
 const typeColors = { ai: "#7859bc", source: "#3c7db3", draft: "#c07158", calculate: "#b07a29", other: "#74818b" };
 const $ = (selector) => document.querySelector(selector);
 const video = $("#replayVideo");
-const state = { frames: [], segments: [], candidates: [], sparks: [], duration: 0, objectUrl: null, videoName: "", activeFilter: "all", candidateReviewId: null };
+const state = {
+  frames: [], segments: [], candidates: [], sparks: [], duration: 0, objectUrl: null, videoName: "", activeFilter: "all", candidateReviewId: null,
+  sessionStartEpochSeconds: null, sessionManifest: null, manifestObjectUrl: null, pendingWorkflow: null, workflowIntegration: null,
+};
 let recorder; let recordingStream; let recordedChunks = []; let recordingStartedAt; let recordTicker; let hardStop; let framesBuilding = false; let captureFinalized = false;
 let selectedChange = "Representation"; let selectedTriggers = ["New information"];
 
@@ -30,8 +33,9 @@ function setVideoTime(time) { video.currentTime = Math.min(Math.max(0, Number(ti
 function updatePlayhead() { $("#playhead").textContent = clock(video.currentTime); document.querySelectorAll(".frame").forEach((node) => node.classList.toggle("active", Math.abs(Number(node.dataset.time) - video.currentTime) < 3)); }
 
 function resetWorkspace() {
-  state.frames = []; state.segments = []; state.candidates = []; state.sparks = []; state.duration = 0; state.candidateReviewId = null;
+  state.frames = []; state.segments = []; state.candidates = []; state.sparks = []; state.duration = 0; state.candidateReviewId = null; state.pendingWorkflow = null; state.workflowIntegration = null;
   $("#filmstrip").innerHTML = ""; renderSegments(); renderCandidates(); renderSparks(); updateCounts();
+  setAlignmentStatus("Workflow alignment: waiting for an import");
 }
 function loadVideo(file, name) {
   if (!file) return;
@@ -46,12 +50,46 @@ function setupVideo() {
   state.duration = video.duration;
   $("#durationLabel").textContent = clock(state.duration) + " recording · choose a thumbnail to seek";
   $("#rangeStart").max = Math.floor(state.duration); $("#rangeEnd").max = Math.floor(state.duration);
-  setRange(0, 0); updateCounts(); buildFrames();
+  setRange(0, 0); updateSessionManifestDownload(); updateCounts(); buildFrames();
 }
 function updateCounts() {
   $("#frameCount").textContent = state.frames.length; $("#segmentCount").textContent = state.segments.length;
   $("#candidateCount").textContent = state.candidates.filter((candidate) => candidate.status === "proposed").length;
   $("#sparkCount").textContent = state.sparks.length;
+}
+function setAlignmentStatus(text, tone) {
+  const node = $("#alignmentStatus"); node.textContent = text; node.classList.toggle("ready", tone === "ready"); node.classList.toggle("needs-attention", tone === "needs-attention");
+}
+function currentManifest() {
+  return {
+    schema: "spark-trace/session-manifest/v1",
+    createdAt: new Date().toISOString(),
+    recording: { videoName: state.videoName, startedAtEpochSeconds: state.sessionStartEpochSeconds, durationSeconds: state.duration || null },
+    note: "Use this file with the matching video to align native Workflow Induction Toolkit timestamps during replay.",
+  };
+}
+function updateSessionManifestDownload() {
+  if (!state.sessionStartEpochSeconds) return;
+  const manifest = currentManifest(); state.sessionManifest = manifest;
+  if (state.manifestObjectUrl) URL.revokeObjectURL(state.manifestObjectUrl);
+  state.manifestObjectUrl = URL.createObjectURL(new Blob([JSON.stringify(manifest, null, 2)], { type: "application/json" }));
+  const link = $("#manifestDownload"); link.href = state.manifestObjectUrl; link.download = "spark-trace-session.json"; link.classList.remove("hidden");
+}
+function loadSessionManifest(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const manifest = JSON.parse(String(reader.result)); const start = Number(manifest && manifest.recording && manifest.recording.startedAtEpochSeconds);
+      if (!Number.isFinite(start) || start < 1000000000) throw new Error("Missing recording start time");
+      state.sessionManifest = manifest; state.sessionStartEpochSeconds = start; updateSessionManifestDownload();
+      setAlignmentStatus("Workflow alignment: session manifest loaded (video start " + new Date(start * 1000).toLocaleTimeString() + ")", "ready");
+      if (state.pendingWorkflow) applyWorkflowImport(state.pendingWorkflow);
+      notify("Session alignment manifest loaded.");
+    } catch (error) {
+      setAlignmentStatus("Workflow alignment: that file is not a Spark Trace session manifest", "needs-attention"); notify("Could not read a valid session alignment manifest.");
+    }
+  };
+  reader.readAsText(file);
 }
 
 function supportedMime() {
@@ -93,7 +131,8 @@ async function startRecording() {
       if (recorder && recorder.state !== "inactive") stopRecording();
       else failCapture("Screen sharing ended before a replay file could be made. Start again and keep the shared surface open.");
     });
-    recorder.start(4000); recordingStartedAt = Date.now();
+    recorder.start(4000); recordingStartedAt = Date.now(); state.sessionStartEpochSeconds = recordingStartedAt / 1000; state.sessionManifest = null;
+    $("#manifestDownload").classList.add("hidden");
     $("#recordButton").classList.add("hidden"); $("#stopButton").classList.remove("hidden"); setStatus("Recording", true);
     recordTicker = setInterval(updateRecordTimer, 250); hardStop = setTimeout(() => stopRecording(), 30 * 60 * 1000);
     updateRecordTimer();
@@ -275,28 +314,80 @@ function addSegment(segment) {
   state.segments.push(Object.assign({ id: "seg-" + Date.now(), note: "" }, segment)); renderSegments(); generateCandidates(true); updateCounts();
 }
 function parseTimestamp(value) {
-  if (typeof value === "number") return value;
+  if (typeof value === "number" && Number.isFinite(value)) return value;
   if (typeof value === "string" && value.includes(":")) {
     const parts = value.split(":").map(Number); return parts.length === 2 ? parts[0] * 60 + parts[1] : parts.reduce((total, part) => total * 60 + part, 0);
   }
-  return Number(value) || 0;
+  const numeric = Number(value); if (Number.isFinite(numeric)) return numeric;
+  const parsedDate = Date.parse(value); return Number.isFinite(parsedDate) ? parsedDate / 1000 : null;
+}
+function normalizeEpoch(value) {
+  const timestamp = parseTimestamp(value); if (!Number.isFinite(timestamp)) return null;
+  return timestamp > 100000000000 ? timestamp / 1000 : timestamp;
+}
+function workflowNodeLeaves(node) {
+  if (!node) return [];
+  if (node.node_type === "action" || !Array.isArray(node.nodes)) return [node];
+  return node.nodes.flatMap(workflowNodeLeaves);
+}
+function workflowNodeTimeRange(node) {
+  const times = workflowNodeLeaves(node).flatMap((leaf) => [normalizeEpoch(leaf.time && leaf.time.before), normalizeEpoch(leaf.time && leaf.time.after)]).filter(Number.isFinite);
+  return times.length ? { start: Math.min(...times), end: Math.max(...times) } : null;
+}
+function workflowNodeEvidence(node) {
+  return workflowNodeLeaves(node).map((leaf) => leaf.state).filter(Boolean).map((state) => ({ before: state.before || null, after: state.after || null })).slice(0, 12);
+}
+function toolkitWorkflowSteps(root) {
+  const nodes = root && root.node_type === "sequence" && Array.isArray(root.nodes) ? root.nodes : [root];
+  return nodes.map((node, index) => {
+    const leaves = workflowNodeLeaves(node); const range = workflowNodeTimeRange(node);
+    const leafLabel = leaves.map((leaf) => leaf.goal || leaf.action).filter(Boolean).slice(0, 2).join("; ");
+    const label = node.goal || leafLabel || "Workflow Induction step " + (index + 1);
+    return { label, rawStart: range && range.start, rawEnd: range && range.end, kind: inferKind(label), note: "Workflow Induction Toolkit · " + (node.status || "unknown") + " · " + leaves.length + " actions", evidence: workflowNodeEvidence(node), sourceSchema: "workflow-induction-toolkit" };
+  }).filter((step) => Number.isFinite(step.rawStart));
+}
+function flatWorkflowSteps(parsed) {
+  const list = Array.isArray(parsed) ? parsed : (parsed.segments || parsed.workflow || parsed.steps || parsed.actions || []);
+  if (!Array.isArray(list)) return [];
+  return list.map((item, index) => {
+    const label = item.description || item.label || item.name || item.step || item.goal || item.action || "Imported workflow step " + (index + 1);
+    return { label, rawStart: normalizeEpoch(item.start || item.start_time || item.start_sec || item.timestamp || (item.time && item.time.before)), rawEnd: normalizeEpoch(item.end || item.end_time || item.end_sec || (item.time && item.time.after)), kind: item.kind || item.type || inferKind(label), note: item.note || item.details || "Imported workflow marker", evidence: item.evidence || [], sourceSchema: "flat-workflow" };
+  }).filter((step) => Number.isFinite(step.rawStart));
+}
+function isAbsoluteWorkflowTime(value) { return Number.isFinite(value) && value > 1000000000; }
+function applyWorkflowImport(workflow) {
+  if (!state.duration) { notify("Load the matching recording before importing workflow data."); return; }
+  const absolute = workflow.steps.some((step) => isAbsoluteWorkflowTime(step.rawStart));
+  if (absolute && !state.sessionStartEpochSeconds) {
+    state.pendingWorkflow = workflow; setAlignmentStatus("Workflow alignment: load the matching session manifest before this native Toolkit file can be placed on the video", "needs-attention");
+    notify("This is native Workflow Induction output. Load the session alignment manifest saved with the recording."); return;
+  }
+  const mapped = []; let outOfRange = 0;
+  workflow.steps.forEach((step, index) => {
+    const start = absolute ? step.rawStart - state.sessionStartEpochSeconds : step.rawStart;
+    const end = absolute ? (Number.isFinite(step.rawEnd) ? step.rawEnd : step.rawStart) - state.sessionStartEpochSeconds : (Number.isFinite(step.rawEnd) ? step.rawEnd : step.rawStart);
+    if (end < -2 || start > state.duration + 2) { outOfRange += 1; return; }
+    mapped.push({ id: "workflow-" + Date.now() + "-" + index, label: step.label, start: Math.max(0, start), end: Math.min(state.duration, Math.max(start, end)), kind: step.kind, note: step.note, evidence: step.evidence, sourceSchema: step.sourceSchema, rawStart: step.rawStart, rawEnd: step.rawEnd });
+  });
+  if (!mapped.length) {
+    setAlignmentStatus("Workflow alignment: no imported steps overlap this recording; check that the manifest matches the video", "needs-attention"); notify("No workflow steps aligned to this video. Check that you selected the matching session manifest."); return;
+  }
+  state.segments = state.segments.filter((segment) => segment.sourceSchema !== "workflow-induction-toolkit" && segment.sourceSchema !== "flat-workflow").concat(mapped);
+  state.pendingWorkflow = null; state.workflowIntegration = { sourceSchema: workflow.schema, alignment: absolute ? "epoch-to-video" : "relative", importedAt: new Date().toISOString(), omittedOutOfRangeSteps: outOfRange };
+  renderSegments(); generateCandidates(true); updateCounts();
+  setAlignmentStatus("Workflow alignment: " + mapped.length + " steps placed on the video" + (outOfRange ? "; " + outOfRange + " outside the recording" : ""), "ready");
+  notify("Imported " + mapped.length + " aligned workflow steps and refreshed review prompts.");
 }
 function importWorkflow(file) {
   const reader = new FileReader();
   reader.onload = () => {
     try {
-      const parsed = JSON.parse(String(reader.result));
-      const list = Array.isArray(parsed) ? parsed : (parsed.segments || parsed.workflow || parsed.steps || parsed.actions || []);
-      if (!Array.isArray(list)) throw new Error("No step list");
-      const imported = list.map((item, index) => {
-        const label = item.description || item.label || item.name || item.step || item.action || "Imported workflow step " + (index + 1);
-        const start = parseTimestamp(item.start || item.start_time || item.start_sec || item.timestamp || 0);
-        const end = parseTimestamp(item.end || item.end_time || item.end_sec || start);
-        return { id: "workflow-" + Date.now() + "-" + index, label, start, end: Math.max(start, end), kind: item.kind || item.type || inferKind(label), note: item.note || item.details || "Imported workflow marker" };
-      });
-      state.segments = state.segments.concat(imported); renderSegments(); generateCandidates(true); updateCounts(); notify("Imported " + imported.length + " workflow markers and refreshed review prompts.");
+      const parsed = JSON.parse(String(reader.result)); const nativeToolkit = parsed && parsed.node_type === "sequence" && Array.isArray(parsed.nodes);
+      const steps = nativeToolkit ? toolkitWorkflowSteps(parsed) : flatWorkflowSteps(parsed);
+      if (!steps.length) throw new Error("No timestamped workflow steps");
+      applyWorkflowImport({ schema: nativeToolkit ? "workflow-induction-toolkit/v1" : "flat-workflow/v1", steps });
     } catch (error) {
-      notify("Could not read that workflow JSON. Add segments manually, or use a JSON array of timestamped steps.");
+      setAlignmentStatus("Workflow alignment: unsupported workflow file", "needs-attention"); notify("Could not read timestamped workflow steps from that JSON file.");
     }
   };
   reader.readAsText(file);
@@ -327,9 +418,9 @@ function renderSparks() {
 }
 function exportSession() {
   const data = {
-    schema: "spark-trace-replay/v0.1", exportedAt: new Date().toISOString(),
-    session: { name: $("#sessionName").value, videoName: state.videoName, durationSeconds: state.duration, videoIncluded: false },
-    workflowSegments: state.segments, candidateProposals: state.candidates, annotations: state.sparks,
+    schema: "spark-trace-replay/v0.2", exportedAt: new Date().toISOString(),
+    session: { name: $("#sessionName").value, videoName: state.videoName, durationSeconds: state.duration, videoStartEpochSeconds: state.sessionStartEpochSeconds, videoIncluded: false },
+    workflowIntegration: state.workflowIntegration, workflowSegments: state.segments, candidateProposals: state.candidates, annotations: state.sparks,
     taxonomy: { changes: changes.map((entry) => entry[0]), triggers: triggers.map((entry) => entry[0]) },
     note: "The video is intentionally not embedded. Candidate proposals are review prompts from video/workflow heuristics, not spark labels. Keep the recording separately and associate it by filename and study ID.",
   };
@@ -342,6 +433,7 @@ video.addEventListener("timeupdate", updatePlayhead);
 $("#recordButton").addEventListener("click", startRecording);
 $("#stopButton").addEventListener("click", stopRecording);
 $("#videoInput").addEventListener("change", (event) => loadVideo(event.target.files[0], event.target.files[0] && event.target.files[0].name));
+$("#sessionManifestInput").addEventListener("change", (event) => { if (event.target.files[0]) loadSessionManifest(event.target.files[0]); });
 $("#buildFrames").addEventListener("click", buildFrames);
 $("#usePlayhead").addEventListener("click", () => setRange(video.currentTime, video.currentTime));
 $("#openSparkButton").addEventListener("click", openSparkModal);

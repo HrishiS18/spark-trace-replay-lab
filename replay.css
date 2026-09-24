@@ -52,6 +52,9 @@ main{max-width:1210px;margin:0 auto;padding:44px 34px 70px}
 .file-drop strong{font-size:12px;margin-top:3px}
 .file-drop small{font-size:10px;color:#818b94;margin-top:2px}
 .download-link{display:block;margin-top:10px;color:#4c74b5;font-size:11px}
+.manifest-import{display:block;border-top:1px solid #e8ecee;padding-top:11px;margin-top:12px;color:#5375aa;font-size:10px;cursor:pointer}
+.manifest-import input{position:absolute;width:1px;height:1px;opacity:0}
+.manifest-import small{display:block;color:#8b949b;margin-top:2px}
 .workspace{margin-top:43px}
 .replay-header{border-top:1px solid var(--line);padding:29px 0 18px;display:flex;justify-content:space-between;align-items:flex-end}
 .replay-header h2,.section-title h2{font:400 27px "Instrument Serif";margin:6px 0 0}
@@ -87,6 +90,9 @@ video{display:block;width:100%;background:#111923;aspect-ratio:16/9}
 .segment small{display:block;color:#7e8991;font-size:10px;line-height:1.35}
 .workflow-import{display:block;border-top:1px solid #e8ecee;padding-top:11px;color:#5375aa;font-size:10px;cursor:pointer}
 .workflow-import small{display:block;color:#8b949b;margin-top:2px}
+.alignment-status{margin:9px 0 0;color:#74818b;font:10px/1.4 "DM Mono"}
+.alignment-status.ready{color:#2c8b71}
+.alignment-status.needs-attention{color:#b26f46}
 .method-card{display:flex;gap:8px;background:#f5f7f6;box-shadow:none}
 .method-card span{color:#7960bf}
 .method-card p{margin:0;color:#758089;font-size:10px;line-height:1.5}
