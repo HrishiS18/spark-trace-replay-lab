@@ -22,7 +22,8 @@ async def main() -> None:
     args = parse_args()
     data_dir = Path(args.data_dir).expanduser().resolve()
     data_dir.mkdir(parents=True, exist_ok=True)
-    async with crec(args.user_name, Screen(), data_directory=str(data_dir)):
+    # Keep screenshots with this session rather than in the Toolkit's global default.
+    async with crec(args.user_name, Screen(screenshots_dir=str(data_dir / "screenshots")), data_directory=str(data_dir)):
         await asyncio.Event().wait()
 
 
