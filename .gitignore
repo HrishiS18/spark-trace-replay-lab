@@ -1,6 +1,7 @@
 .DS_Store
 *.webm
 *.mp4
+tools/__pycache__/
 *.mov
 spark-trace-replay.json
 workflow.json

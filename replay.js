@@ -18,6 +18,7 @@ const video = $("#replayVideo");
 const state = {
   frames: [], segments: [], candidates: [], sparks: [], duration: 0, objectUrl: null, videoName: "", activeFilter: "all", candidateReviewId: null,
   sessionStartEpochSeconds: null, sessionManifest: null, manifestObjectUrl: null, pendingWorkflow: null, workflowIntegration: null,
+  workflowCapture: { status: "checking" }, workflowCaptureStart: null, workflowCaptureStop: null,
 };
 let recorder; let recordingStream; let recordedChunks = []; let recordingStartedAt; let recordTicker; let hardStop; let framesBuilding = false; let captureFinalized = false;
 let selectedChange = "Representation"; let selectedTriggers = ["New information"];
@@ -26,6 +27,22 @@ function seconds(value) { return Math.max(0, Math.round(Number(value) || 0)); }
 function clock(value) { const time = seconds(value); return String(Math.floor(time / 60)).padStart(2, "0") + ":" + String(time % 60).padStart(2, "0"); }
 function notify(text) { const node = $("#toast"); node.textContent = text; node.classList.remove("hidden"); setTimeout(() => node.classList.add("hidden"), 3000); }
 function setStatus(text, active) { const node = $("#recordStatus"); node.textContent = text; node.classList.toggle("recording", Boolean(active)); }
+function renderWorkflowCaptureStatus() {
+  const node = $("#workflowCompanionStatus"); if (!node) return;
+  const capture = state.workflowCapture || {};
+  const labels = {
+    checking: "Toolkit companion: checking local connection…",
+    unavailable: "Toolkit companion: not connected — video-only capture",
+    ready: "Toolkit companion: ready — starts after screen-share approval",
+    starting: "Toolkit companion: starting activity trace…",
+    recording: "Toolkit companion: recording activity trace",
+    stopping: "Toolkit companion: finalizing activity trace…",
+    stopped: "Toolkit companion: trace saved alongside this session",
+    error: "Toolkit companion: could not start — video-only capture",
+  };
+  node.textContent = labels[capture.status] || "Toolkit companion: " + capture.status;
+  node.classList.toggle("active", capture.status === "recording");
+}
 function getAxis(list, name) { return list.find((entry) => entry[0] === name) || list[0]; }
 function getRange() { return { start: Math.min(seconds($("#rangeStart").value), seconds($("#rangeEnd").value)), end: Math.max(seconds($("#rangeStart").value), seconds($("#rangeEnd").value)) }; }
 function setRange(start, end) { $("#rangeStart").value = seconds(start); $("#rangeEnd").value = seconds(end == null ? start : end); }
@@ -65,6 +82,11 @@ function currentManifest() {
     schema: "spark-trace/session-manifest/v1",
     createdAt: new Date().toISOString(),
     recording: { videoName: state.videoName, startedAtEpochSeconds: state.sessionStartEpochSeconds, durationSeconds: state.duration || null },
+    workflowCapture: state.workflowCapture && state.workflowCapture.sessionId ? {
+      sessionId: state.workflowCapture.sessionId, sessionDir: state.workflowCapture.sessionDir || null,
+      recordsDir: state.workflowCapture.recordsDir || null, startedAt: state.workflowCapture.startedAt || null,
+      stoppedAt: state.workflowCapture.stoppedAt || null, status: state.workflowCapture.status,
+    } : null,
     note: "Use this file with the matching video to align native Workflow Induction Toolkit timestamps during replay.",
   };
 }
@@ -98,6 +120,48 @@ function supportedMime() {
   const options = ["video/webm", "video/webm;codecs=vp8", "video/webm;codecs=vp9", "video/webm;codecs=vp8,opus", "video/webm;codecs=vp9,opus"];
   return options.find((type) => window.MediaRecorder && MediaRecorder.isTypeSupported(type)) || "";
 }
+const companionUrl = "http://127.0.0.1:8787";
+async function companionRequest(path, method, body) {
+  const controller = new AbortController(); const timeout = setTimeout(() => controller.abort(), 3500);
+  try {
+    const response = await fetch(companionUrl + path, { method, headers: { "Content-Type": "application/json" }, body: body ? JSON.stringify(body) : undefined, signal: controller.signal });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload.error || "Local companion request failed");
+    return payload;
+  } finally { clearTimeout(timeout); }
+}
+async function checkWorkflowCompanion() {
+  try {
+    const status = await companionRequest("/health", "GET");
+    state.workflowCapture = status.ok ? { status: "ready" } : { status: "unavailable", detail: status.error };
+  } catch (error) { state.workflowCapture = { status: "unavailable" }; }
+  renderWorkflowCaptureStatus();
+}
+function captureSessionId() { return "spark-" + new Date().toISOString().replace(/[:.]/g, "-") + "-" + Math.random().toString(16).slice(2, 8); }
+async function startWorkflowCapture(sessionId) {
+  state.workflowCapture = { status: "starting", sessionId }; renderWorkflowCaptureStatus();
+  try {
+    const result = await companionRequest("/v1/captures/start", "POST", { sessionId, userName: "spark-trace-participant" });
+    state.workflowCapture = { ...result.capture, status: "recording" }; updateSessionManifestDownload(); renderWorkflowCaptureStatus();
+  } catch (error) {
+    state.workflowCapture = { status: "error", sessionId, detail: error.message }; renderWorkflowCaptureStatus();
+    notify("Video is recording, but the Toolkit trace did not start. Check the local companion terminal.");
+  }
+}
+async function stopWorkflowCapture() {
+  if (state.workflowCaptureStop) return state.workflowCaptureStop;
+  state.workflowCaptureStop = (async () => {
+    if (state.workflowCaptureStart) await state.workflowCaptureStart;
+    if (state.workflowCapture.status !== "recording") return;
+    state.workflowCapture.status = "stopping"; renderWorkflowCaptureStatus();
+    try {
+      const result = await companionRequest("/v1/captures/stop", "POST", {});
+      state.workflowCapture = { ...result.capture, status: result.capture.status || "stopped" }; updateSessionManifestDownload();
+    } catch (error) { state.workflowCapture.status = "error"; state.workflowCapture.detail = error.message; }
+    renderWorkflowCaptureStatus();
+  })();
+  try { await state.workflowCaptureStop; } finally { state.workflowCaptureStop = null; }
+}
 function resetCaptureControls(status) {
   clearInterval(recordTicker); clearTimeout(hardStop);
   $("#recordButton").classList.remove("hidden");
@@ -107,6 +171,7 @@ function resetCaptureControls(status) {
 function failCapture(message) {
   if (captureFinalized) return;
   captureFinalized = true;
+  stopWorkflowCapture();
   if (recordingStream) recordingStream.getTracks().forEach((track) => track.stop());
   resetCaptureControls("Capture ended");
   notify(message);
@@ -121,6 +186,8 @@ async function startRecording() {
       audio: true,
     });
     recordedChunks = []; captureFinalized = false;
+    const sessionId = captureSessionId(); state.workflowCaptureStop = null;
+    state.workflowCaptureStart = startWorkflowCapture(sessionId);
     const mimeType = supportedMime();
     recorder = mimeType ? new MediaRecorder(recordingStream, { mimeType }) : new MediaRecorder(recordingStream);
     recorder.addEventListener("dataavailable", (event) => { if (event.data && event.data.size) recordedChunks.push(event.data); });
@@ -137,6 +204,7 @@ async function startRecording() {
     recordTicker = setInterval(updateRecordTimer, 250); hardStop = setTimeout(() => stopRecording(), 30 * 60 * 1000);
     updateRecordTimer();
   } catch (error) {
+    stopWorkflowCapture();
     notify("Screen capture was not started. You can import a recording instead.");
   }
 }
@@ -151,12 +219,14 @@ function stopRecording() {
   }
   const stop = $("#stopButton"); stop.disabled = true; stop.textContent = "Finalizing video…";
   setStatus("Finalizing", false);
+  stopWorkflowCapture();
   try { recorder.requestData(); recorder.stop(); }
   catch (error) { failCapture("The browser could not finalize this recording. Please start a new recording."); }
 }
 function finishRecording() {
   if (captureFinalized) return;
   captureFinalized = true;
+  stopWorkflowCapture();
   clearInterval(recordTicker); clearTimeout(hardStop);
   if (recordingStream) recordingStream.getTracks().forEach((track) => track.stop());
   $("#recordButton").classList.remove("hidden"); $("#stopButton").classList.add("hidden"); setStatus("Preparing replay", false);
@@ -481,4 +551,4 @@ $("#exportButton").addEventListener("click", exportSession);
 $("#jumpToCurrent").addEventListener("click", () => { setVideoTime(video.currentTime); window.scrollTo({ top: 0, behavior: "smooth" }); });
 $("#sessionName").addEventListener("input", () => { document.title = $("#sessionName").value + " · Spark Trace Replay"; });
 document.addEventListener("keydown", (event) => { if (event.key === "Escape") { releaseCandidateReview(); document.querySelectorAll(".modal-backdrop").forEach((node) => node.classList.add("hidden")); } if (event.key.toLowerCase() === "m" && !["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement.tagName)) { event.preventDefault(); setRange(video.currentTime, video.currentTime); openSparkModal(); } });
-renderSegments(); renderCandidates(); renderSparks(); renderPickers(); updateCounts();
+renderSegments(); renderCandidates(); renderSparks(); renderPickers(); updateCounts(); renderWorkflowCaptureStatus(); checkWorkflowCompanion();

@@ -50,9 +50,9 @@ The screen recording and computer-use trace are separate capture streams. The To
 
 ### Full paired capture
 
-1. Start `crec` from the Toolkit on a dedicated, consented study desktop.
+1. Start the local Spark Trace Toolkit companion once (details below). It starts and stops `crec` automatically after the participant grants screen-sharing permission.
 2. Start a Spark Trace recording. It stores the wall-clock start time locally.
-3. Work normally, then stop the Spark Trace recording.
+3. Work normally, then stop the Spark Trace recording. The companion stops the paired Toolkit trace.
 4. Save **both** `spark-trace-recording.webm` and **Save session alignment manifest**.
 5. Process the Toolkit trace into its native `workflow.json` following the Toolkit instructions.
 6. In Replay Lab, load the saved video, then **Load session alignment manifest**, then **Import workflow.json**.
@@ -60,6 +60,43 @@ The screen recording and computer-use trace are separate capture streams. The To
 The imported steps should appear in the right-hand workflow list at their matching video times. The candidate queue then derives evidence-backed prompts from those steps: AI interactions, source transitions, corrections, pauses, rapid switching, and workflow boundaries.
 
 If the manifest and video do not belong to the same session, the interface refuses to place out-of-range steps rather than silently creating misleading markers.
+
+### Start the automatic-capture companion
+
+Browsers cannot directly launch a global desktop recorder after a screen-share prompt. The loopback-only companion closes that gap: start it once before a study session, then use the Replay Lab normally. When screen sharing is approved, the web app starts the Toolkit recorder; when the screen recording ends, it stops it. It stores each trace in a separate local session directory.
+
+One-time Toolkit setup:
+
+```bash
+cd /path/to/parent-directory
+git clone https://github.com/zorazrw/workflow-induction-toolkit.git
+cd workflow-induction-toolkit
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -e ./computer-recorder
+python -m pip install -r workflow-induction/requirements.txt
+```
+
+Before a recording, run this in a second terminal and leave it open:
+
+```bash
+cd /path/to/spark-trace-replay-lab
+python3 tools/toolkit_companion.py
+```
+
+The Replay Lab shows **Toolkit companion: ready** before recording. It creates data under a sibling `spark-trace-sessions/` directory. After the session, induce the workflow using the session directory that the companion reports:
+
+```bash
+cd /path/to/workflow-induction-toolkit
+source .venv/bin/activate
+export OPENAI_API_KEY="your-api-key"
+cd workflow-induction
+python get_human_trajectory.py --data_dir /path/to/spark-trace-sessions/<session-id>
+python segment.py --data_dir /path/to/spark-trace-sessions/<session-id>
+python induce.py --data_dir /path/to/spark-trace-sessions/<session-id> --auto
+```
+
+The Toolkit needs macOS Accessibility and, when it takes screenshots, Screen Recording permission for the terminal used to launch the companion. The raw trace and event-linked screenshots stay local until the Toolkit's LLM-backed induction step; review its data handling before enabling it with participant material.
 
 ### Fixture for integration testing
 

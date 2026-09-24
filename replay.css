@@ -45,6 +45,7 @@ main{max-width:1210px;margin:0 auto;padding:44px 34px 70px}
 .record-controls{display:flex;align-items:center;gap:10px;margin:20px 0 15px}
 .timer{margin-left:auto;color:#626d75;font:12px "DM Mono"}
 .capture-foot{display:flex;justify-content:space-between;border-top:1px solid #e8ebec;padding-top:11px;color:#89929a;font-size:10px}
+.capture-foot #workflowCompanionStatus.active{color:#2c8b71}
 .file-drop{min-height:104px;border:1px dashed #bfcbd3;border-radius:7px;display:grid;place-content:center;text-align:center;cursor:pointer;color:#53626d}
 .file-drop input,.workflow-import input{position:absolute;width:1px;height:1px;opacity:0}
 .file-drop:hover{background:#f7faff;border-color:#8aa7e3}
