@@ -236,6 +236,10 @@ function candidateKey(candidate) { return candidate.kind + ":" + Math.round(cand
 function proposedCandidate(kind, start, end, title, rationale, source) {
   return { id: "candidate-" + Date.now() + "-" + Math.random().toString(16).slice(2), kind, start: seconds(start), end: seconds(end == null ? start : end), title, rationale, source, status: "proposed" };
 }
+function percentile(sortedValues, fraction) {
+  if (!sortedValues.length) return 0;
+  return sortedValues[Math.min(sortedValues.length - 1, Math.max(0, Math.floor((sortedValues.length - 1) * fraction)))];
+}
 function textForSegment(segment) { return (segment.label + " " + (segment.note || "") + " " + segment.kind).toLowerCase(); }
 function classifyWorkflowCandidate(segment, previous) {
   const text = textForSegment(segment); const previousText = previous ? textForSegment(previous) : "";
@@ -258,16 +262,31 @@ function generateCandidates(silent) {
   });
 
   const scores = state.frames.map((frame) => frame.visualChange || 0).filter((score) => score > 0).sort((a, b) => a - b);
-  const median = scores.length ? scores[Math.floor(scores.length / 2)] : Infinity;
-  state.frames.filter((frame) => frame.visualChange >= Math.max(8, median * 1.8)).sort((a, b) => b.visualChange - a.visualChange).slice(0, 8).forEach((frame) => {
+  // Chat, document, and spreadsheet work can change in a small region of an otherwise
+  // static screen. The former fixed 8/100 cutoff silently produced no cues for those
+  // sessions. Surface the top-quartile non-zero changes instead. They are explicitly
+  // described as navigation prompts, not claims about a cognitive event.
+  const visualThreshold = Math.max(0.35, percentile(scores, 0.75));
+  state.frames.filter((frame) => frame.visualChange >= visualThreshold).sort((a, b) => b.visualChange - a.visualChange).slice(0, 8).forEach((frame) => {
     add(proposedCandidate("Visual change", Math.max(0, frame.time - Number($("#sampleInterval").value)), frame.time, "Visible context shift", "The screen changed more than usual in this interval (visual-change score " + frame.visualChange + "/100).", "video"));
   });
+
+  // A static-looking recording can still contain a useful conversation. Provide a
+  // transparent, evenly-spaced route through it rather than leaving the participant
+  // with an empty review queue. These are coverage markers, not detected events.
+  if (!proposed.length && state.duration >= 90) {
+    const checkpoints = Math.min(6, Math.max(2, Math.floor(state.duration / 120)));
+    for (let index = 1; index <= checkpoints; index += 1) {
+      const time = (state.duration * index) / (checkpoints + 1);
+      add(proposedCandidate("Timeline checkpoint", Math.max(0, time - 8), Math.min(state.duration, time + 8), "Replay checkpoint", "No strong visual or workflow change was detected here. This evenly-spaced checkpoint helps you scan the session without watching every minute.", "video"));
+    }
+  }
 
   state.candidates = proposed.sort((a, b) => a.start - b.start); renderCandidates(); updateCounts();
   if (!silent) notify(state.candidates.length ? "Prepared " + state.candidates.filter((candidate) => candidate.status === "proposed").length + " moments for review." : "No strong candidates yet. Import workflow.json or add markers to create richer suggestions.");
 }
 function candidateColor(kind) {
-  return ({ "AI turn": "#7658bf", "Source switch": "#3975b8", "Correction": "#d17442", "Long pause": "#af752b", "Rapid switching": "#b16391", "Workflow boundary": "#597bb7", "Visual change": "#74818b" })[kind] || "#597bb7";
+  return ({ "AI turn": "#7658bf", "Source switch": "#3975b8", "Correction": "#d17442", "Long pause": "#af752b", "Rapid switching": "#b16391", "Workflow boundary": "#597bb7", "Visual change": "#74818b", "Timeline checkpoint": "#74818b" })[kind] || "#597bb7";
 }
 function renderCandidates() {
   const visible = state.candidates.filter((candidate) => candidate.status !== "dismissed");

@@ -37,10 +37,10 @@ Use a local server rather than double-clicking the file: browser screen capture 
 
 The replay page generates a **Candidate moments to consider** queue. It can propose moments from:
 
-- marked visual changes in the sampled screen video;
+- marked visual changes in the sampled screen video (including subtle chat/document changes, ranked relative to the recording);
 - imported workflow events, including AI turns, source transitions, corrections, long gaps, rapid switching, and activity-boundary changes.
 
-These are retrieval prompts only. The system does not claim that a cognitive spark occurred. Participants can review a candidate, adjust its timing, annotate it as a spark, or dismiss it. The export retains all candidate dispositions for later analysis.
+These are retrieval prompts only. The system does not claim that a cognitive spark occurred. When a video has no detectable visual change or workflow trace, the queue provides clearly labelled, evenly spaced **replay checkpoints** so participants can still navigate a long recording without watching every minute. Participants can review a candidate, adjust its timing, annotate it as a spark, or dismiss it. The export retains all candidate dispositions for later analysis.
 
 ## Optional workflow companion
 
