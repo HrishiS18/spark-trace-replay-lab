@@ -30,7 +30,10 @@ class CaptureManager:
     def __init__(self, toolkit_dir: Path, data_root: Path, python_bin: Path, runner: Path) -> None:
         self.toolkit_dir = toolkit_dir.resolve()
         self.data_root = data_root.expanduser().resolve()
-        self.python_bin = python_bin.expanduser().resolve()
+        # Do not resolve this path: a virtual environment's `python` is commonly a
+        # symlink to the system executable. Resolving it bypasses `pyvenv.cfg`, so
+        # imports (including `crec`) come from the system environment instead.
+        self.python_bin = python_bin.expanduser().absolute()
         self.runner = runner.resolve()
         self.lock = threading.Lock()
         self.process: subprocess.Popen[str] | None = None
