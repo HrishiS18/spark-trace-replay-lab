@@ -10,6 +10,7 @@ import re
 import signal
 import subprocess
 import threading
+import time
 from datetime import datetime, timezone
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -81,6 +82,16 @@ class CaptureManager:
             self.log_handle = log_path.open("w", encoding="utf-8")
             command = [str(self.python_bin), str(self.runner), "--data-dir", str(records_dir), "--user-name", user_name]
             self.process = subprocess.Popen(command, cwd=self.toolkit_dir, stdout=self.log_handle, stderr=subprocess.STDOUT, text=True)
+            # A recorder can fail before it starts (for example, because the Toolkit
+            # package is absent from the selected virtual environment). Do not tell
+            # the browser that a companion trace exists unless it survives startup.
+            time.sleep(0.4)
+            if self.process.poll() is not None:
+                exit_code = self.process.returncode
+                self.log_handle.close()
+                self.log_handle = None
+                self.process = None
+                raise RuntimeError(f"Toolkit recorder exited during startup (code {exit_code}). Check {log_path}.")
             self.capture = {**metadata, "status": "recording", "pid": self.process.pid, "logPath": str(log_path)}
             return dict(self.capture)
 
