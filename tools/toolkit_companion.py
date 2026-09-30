@@ -44,6 +44,23 @@ class CaptureManager:
             return f"Toolkit Python not found: {self.python_bin}. Complete the Toolkit setup first."
         if not self.runner.is_file():
             return f"Capture runner not found: {self.runner}"
+        # The browser checks /health before capture begins. Validate the one package
+        # the recorder needs here, so the UI says "not ready" rather than appearing
+        # healthy and failing immediately after screen-share is approved.
+        try:
+            check = subprocess.run(
+                [str(self.python_bin), "-c", "import crec"],
+                cwd=self.toolkit_dir,
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
+        except (OSError, subprocess.TimeoutExpired) as error:
+            return f"Could not validate the Toolkit environment: {error}"
+        if check.returncode != 0:
+            detail = (check.stderr or check.stdout).strip().splitlines()
+            suffix = f" ({detail[-1]})" if detail else ""
+            return f"Toolkit recorder dependency 'crec' is unavailable in {self.python_bin}.{suffix}"
         return None
 
     def status(self) -> dict[str, Any]:
